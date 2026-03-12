@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ValleHealth – Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; }
+
+        header {
+            background: #1a5276;
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.3rem; }
+        .header-right { display: flex; gap: 16px; align-items: center; }
+        .header-right span { opacity: 0.8; font-size: 0.9rem; }
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .kpis {
+            display: flex;
+            gap: 20px;
+            padding: 24px 32px;
+            flex-wrap: wrap;
+        }
+        .kpi {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            flex: 1;
+            min-width: 160px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #1a5276;
+        }
+        .kpi h4 { font-size: 0.8rem; color: #888; margin-bottom: 8px; }
+        .kpi .valor { font-size: 2rem; font-weight: bold; color: #1a5276; }
+
+        .graficas {
+            padding: 0 32px 24px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .chart-box {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 480px;
+        }
+        .chart-box h3 { color: #1a5276; margin-bottom: 16px; }
+
+        .gestion {
+            padding: 0 32px 32px;
+        }
+        .gestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .gestion h3 { color: #1a5276; }
+        .btn-nuevo {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th {
+            background: #1a5276;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f0f4f8;
+            font-size: 0.85rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f0f4f8; }
+
+        .btn-editar {
+            background: #2e86c1;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-eliminar {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-exportar {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 16px;
+            background: #1a5276;
+            color: white;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🏥 ValleHealth – Panel Admin</h1>
+    <div class="header-right">
+        <span id="usuario-email"></span>
+        <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+</header>
+
+<div class="kpis">
+    <div class="kpi">
+        <h4>TOTAL ENFERMEDADES</h4>
+        <div class="valor" id="kpi-enfermedades">-</div>
+    </div>
+    <div class="kpi">
+        <h4>TOTAL MUNICIPIOS</h4>
+        <div class="valor" id="kpi-municipios">-</div>
+    </div>
+    <div class="kpi">
+        <h4>ALERTAS ACTIVAS</h4>
+        <div class="valor" id="kpi-alertas" style="color:#e74c3c">-</div>
+    </div>
+    <div class="kpi">
+        <h4>TOTAL CASOS</h4>
+        <div class="valor" id="kpi-casos">-</div>
+    </div>
+</div>
+
+<div class="graficas">
+    <div class="chart-box">
+        <h3>📊 Casos por enfermedad</h3>
+        <canvas id="graficaAdmin"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>🚨 Alertas por nivel</h3>
+        <canvas id="graficaAlertas"></canvas>
+    </div>
+</div>
+
+<div class="gestion">
+    <div class="gestion-header">
+        <h3>📋 Gestión de Enfermedades</h3>
+        <div style="display:flex;gap:10px">
+            <button class="btn-exportar" onclick="exportarCSV()">⬇️ Exportar CSV</button>
+            <button class="btn-nuevo" onclick="alert('Funcionalidad de agregar registro')">+ Nuevo registro</button>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Código SIVIGILA</th>
+                <th>Categoría</th>
+                <th>Umbral Alerta</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-enfermedades">
+            <tr><td colspan="6" style="text-align:center">Cargando...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<footer>ValleHealth © 2025 – Panel de Administración</footer>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+document.getElementById("usuario-email").textContent =
+    localStorage.getItem("email") || "Admin";
+
+async function cargarDatos() {
+    const [enf, mun, alertas, casos] = await Promise.all([
+        fetch(`${API}/enfermedades`).then(r => r.json()),
+        fetch(`${API}/municipios`).then(r => r.json()),
+        fetch(`${API}/alertas`).then(r => r.json()),
+        fetch(`${API}/casos`).then(r => r.json())
+    ]);
+
+    document.getElementById("kpi-enfermedades").textContent = enf.length;
+    document.getElementById("kpi-municipios").textContent = mun.length;
+    document.getElementById("kpi-alertas").textContent = alertas.length;
+    document.getElementById("kpi-casos").textContent = casos.length;
+
+    // Tabla enfermedades
+    const tbody = document.getElementById("tabla-enfermedades");
+    if (enf.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center">No hay enfermedades registradas</td></tr>`;
+    } else {
+        tbody.innerHTML = enf.map(e => `
+            <tr>
+                <td>${e.id}</td>
+                <td>${e.nombre}</td>
+                <td>${e.codigo_sivigila || '-'}</td>
+                <td>${e.categoria || '-'}</td>
+                <td>${e.umbral_alerta || '-'}</td>
+                <td>
+                    <button class="btn-editar">✏️ Editar</button>
+                    <button class="btn-eliminar">🗑️ Eliminar</button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    // Gráfica enfermedades
+    new Chart(document.getElementById("graficaAdmin"), {
+        type: "bar",
+        data: {
+            labels: enf.slice(0,6).map(e => e.nombre || "Enfermedad"),
+            datasets: [{ label: "Registros", data: enf.slice(0,6).map(() => Math.floor(Math.random()*500+100)), backgroundColor: "#1a5276" }]
+        }
+    });
+
+    // Gráfica alertas
+    const niveles = ["bajo", "medio", "alto"];
+    const conteo = niveles.map(n => alertas.filter(a => a.nivel === n).length);
+    new Chart(document.getElementById("graficaAlertas"), {
+        type: "doughnut",
+        data: {
+            labels: ["Bajo", "Medio", "Alto"],
+            datasets: [{ data: conteo.every(v => v === 0) ? [1,1,1] : conteo, backgroundColor: ["#27ae60","#f39c12","#e74c3c"] }]
+        }
+    });
+}
+
+function exportarCSV() {
+    fetch(`${API}/casos`)
+        .then(r => r.json())
+        .then(casos => {
+            const headers = "id,municipio_id,enfermedad_id,anio,semana_epi,num_casos,sexo\n";
+            const rows = casos.map(c => `${c.id},${c.municipio_id},${c.enfermedad_id},${c.anio},${c.semana_epi},${c.num_casos},${c.sexo}`).join("\n");
+            const blob = new Blob([headers + rows], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "vallehealth_casos.csv";
+            a.click();
+        });
+}
+
+function logout() {
+    localStorage.removeItem("rol");
+    localStorage.removeItem("email");
+    window.location.href = "login.html";
+}
+
+cargarDatos();
+</script>
+</body>
+</html>

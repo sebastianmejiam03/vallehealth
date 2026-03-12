@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ValleHealth – Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; }
+
+        header {
+            background: #1a5276;
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.3rem; }
+        header a { color: white; text-decoration: none; opacity: 0.8; }
+
+        .filtros {
+            background: white;
+            padding: 20px 32px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .filtros label { font-size: 0.85rem; color: #555; }
+        .filtros select, .filtros input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .filtros button {
+            padding: 8px 20px;
+            background: #1a5276;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .graficas {
+            padding: 24px 32px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .chart-box {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 480px;
+        }
+        .chart-box h3 { color: #1a5276; margin-bottom: 16px; }
+
+        .tabla-section {
+            padding: 0 32px 32px;
+        }
+        .tabla-section h3 { color: #1a5276; margin-bottom: 12px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th {
+            background: #1a5276;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f0f4f8;
+            font-size: 0.85rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f0f4f8; }
+
+        footer {
+            text-align: center;
+            padding: 16px;
+            background: #1a5276;
+            color: white;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🏥 ValleHealth – Dashboard</h1>
+    <a href="index.html">← Volver al inicio</a>
+</header>
+
+<div class="filtros">
+    <div>
+        <label>Municipio</label><br>
+        <select id="filtro-municipio">
+            <option value="">Todos</option>
+        </select>
+    </div>
+    <div>
+        <label>Enfermedad</label><br>
+        <select id="filtro-enfermedad">
+            <option value="">Todas</option>
+        </select>
+    </div>
+    <div>
+        <label>Año</label><br>
+        <input type="number" id="filtro-anio" placeholder="2024" min="2000" max="2025">
+    </div>
+    <button onclick="filtrar()">🔍 Filtrar</button>
+</div>
+
+<div class="graficas">
+    <div class="chart-box">
+        <h3>📊 Casos por enfermedad</h3>
+        <canvas id="graficaBarras"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>📈 Tendencia por semana epidemiológica</h3>
+        <canvas id="graficaLinea"></canvas>
+    </div>
+</div>
+
+<div class="tabla-section">
+    <h3>📋 Registros de casos</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Municipio</th>
+                <th>Enfermedad</th>
+                <th>Año</th>
+                <th>Semana Epi.</th>
+                <th>Casos</th>
+                <th>Sexo</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-casos">
+            <tr><td colspan="7" style="text-align:center">Cargando datos...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<footer>ValleHealth © 2025 – Dashboard de Enfermedades Valle del Cauca</footer>
+
+<script>
+const API = "http://127.0.0.1:8000";
+let graficaBarras, graficaLinea;
+
+async function cargarFiltros() {
+    const [municipios, enfermedades] = await Promise.all([
+        fetch(`${API}/municipios`).then(r => r.json()),
+        fetch(`${API}/enfermedades`).then(r => r.json())
+    ]);
+
+    const selMun = document.getElementById("filtro-municipio");
+    municipios.forEach(m => {
+        selMun.innerHTML += `<option value="${m.id}">${m.nombre}</option>`;
+    });
+
+    const selEnf = document.getElementById("filtro-enfermedad");
+    enfermedades.forEach(e => {
+        selEnf.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+    });
+}
+
+async function filtrar() {
+    const municipio_id = document.getElementById("filtro-municipio").value;
+    const enfermedad_id = document.getElementById("filtro-enfermedad").value;
+    const anio = document.getElementById("filtro-anio").value;
+
+    let url = `${API}/casos?`;
+    if (municipio_id) url += `municipio_id=${municipio_id}&`;
+    if (enfermedad_id) url += `enfermedad_id=${enfermedad_id}&`;
+    if (anio) url += `anio=${anio}&`;
+
+    const casos = await fetch(url).then(r => r.json());
+    actualizarTabla(casos);
+    actualizarGraficas(casos);
+}
+
+function actualizarTabla(casos) {
+    const tbody = document.getElementById("tabla-casos");
+    if (casos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center">No hay registros</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = casos.map(c => `
+        <tr>
+            <td>${c.id}</td>
+            <td>${c.municipio_id}</td>
+            <td>${c.enfermedad_id}</td>
+            <td>${c.anio}</td>
+            <td>${c.semana_epi}</td>
+            <td>${c.num_casos}</td>
+            <td>${c.sexo}</td>
+        </tr>
+    `).join("");
+}
+
+function actualizarGraficas(casos) {
+    const semanas = [...new Set(casos.map(c => c.semana_epi))].sort((a,b) => a-b);
+    const casosPorSemana = semanas.map(s => casos.filter(c => c.semana_epi === s).reduce((sum, c) => sum + c.num_casos, 0));
+
+    if (graficaBarras) graficaBarras.destroy();
+    if (graficaLinea) graficaLinea.destroy();
+
+    graficaBarras = new Chart(document.getElementById("graficaBarras"), {
+        type: "bar",
+        data: {
+            labels: semanas.map(s => `Semana ${s}`),
+            datasets: [{ label: "Casos", data: casosPorSemana, backgroundColor: "#2e86c1" }]
+        }
+    });
+
+    graficaLinea = new Chart(document.getElementById("graficaLinea"), {
+        type: "line",
+        data: {
+            labels: semanas.map(s => `Sem ${s}`),
+            datasets: [{ label: "Tendencia", data: casosPorSemana, borderColor: "#1a5276", fill: false, tension: 0.4 }]
+        }
+    });
+}
+
+cargarFiltros();
+filtrar();
+</script>
+</body>
+</html>

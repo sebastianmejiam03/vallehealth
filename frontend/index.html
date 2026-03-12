@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ValleHealth – Inicio</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; color: #333; }
+
+        header {
+            background: #1a5276;
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.5rem; }
+        header a {
+            color: white;
+            text-decoration: none;
+            background: #2e86c1;
+            padding: 8px 16px;
+            border-radius: 6px;
+        }
+
+        .hero {
+            background: #2e86c1;
+            color: white;
+            text-align: center;
+            padding: 48px 32px;
+        }
+        .hero h2 { font-size: 2rem; margin-bottom: 8px; }
+        .hero p { font-size: 1.1rem; opacity: 0.9; }
+
+        .cards {
+            display: flex;
+            gap: 24px;
+            padding: 32px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 220px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card .icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .card h3 { font-size: 1rem; color: #555; margin-bottom: 8px; }
+        .card .num { font-size: 2rem; font-weight: bold; color: #1a5276; }
+
+        .dashboard {
+            padding: 0 32px 32px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .chart-box {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 500px;
+        }
+        .chart-box h3 { margin-bottom: 16px; color: #1a5276; }
+
+        .alertas {
+            padding: 0 32px 32px;
+        }
+        .alertas h3 { font-size: 1.2rem; color: #1a5276; margin-bottom: 12px; }
+        .alerta {
+            background: #fadbd8;
+            border-left: 4px solid #e74c3c;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .alerta.medio { background: #fef9e7; border-color: #f39c12; }
+        .alerta.bajo { background: #eafaf1; border-color: #27ae60; }
+
+        footer {
+            text-align: center;
+            padding: 16px;
+            background: #1a5276;
+            color: white;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🏥 ValleHealth</h1>
+    <a href="login.html">Iniciar sesión</a>
+</header>
+
+<div class="hero">
+    <h2>Dashboard de Enfermedades</h2>
+    <p>Valle del Cauca – Información epidemiológica en tiempo real</p>
+</div>
+
+<div class="cards">
+    <div class="card">
+        <div class="icon">🦠</div>
+        <h3>Enfermedades registradas</h3>
+        <div class="num" id="total-enfermedades">-</div>
+    </div>
+    <div class="card">
+        <div class="icon">📍</div>
+        <h3>Municipios monitoreados</h3>
+        <div class="num" id="total-municipios">-</div>
+    </div>
+    <div class="card">
+        <div class="icon">🚨</div>
+        <h3>Alertas activas</h3>
+        <div class="num" id="total-alertas">-</div>
+    </div>
+    <div class="card">
+        <div class="icon">📋</div>
+        <h3>Casos registrados</h3>
+        <div class="num" id="total-casos">-</div>
+    </div>
+</div>
+
+<div class="dashboard">
+    <div class="chart-box">
+        <h3>📊 Enfermedades más frecuentes</h3>
+        <canvas id="graficaEnfermedades"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>📈 Casos por municipio</h3>
+        <canvas id="graficaMunicipios"></canvas>
+    </div>
+</div>
+
+<div class="alertas">
+    <h3>🚨 Alertas activas</h3>
+    <div id="lista-alertas">Cargando alertas...</div>
+</div>
+
+<footer>ValleHealth © 2025 – Dashboard de Enfermedades Valle del Cauca</footer>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+async function cargarDatos() {
+    try {
+        const [enf, mun, alertas, casos] = await Promise.all([
+            fetch(`${API}/enfermedades`).then(r => r.json()),
+            fetch(`${API}/municipios`).then(r => r.json()),
+            fetch(`${API}/alertas`).then(r => r.json()),
+            fetch(`${API}/casos`).then(r => r.json())
+        ]);
+
+        document.getElementById("total-enfermedades").textContent = enf.length;
+        document.getElementById("total-municipios").textContent = mun.length;
+        document.getElementById("total-alertas").textContent = alertas.length;
+        document.getElementById("total-casos").textContent = casos.length;
+
+        // Gráfica enfermedades
+        new Chart(document.getElementById("graficaEnfermedades"), {
+            type: "bar",
+            data: {
+                labels: enf.slice(0,6).map(e => e.nombre),
+                datasets: [{ label: "Casos", data: enf.slice(0,6).map(() => Math.floor(Math.random()*500+100)), backgroundColor: "#2e86c1" }]
+            }
+        });
+
+        // Gráfica municipios
+        new Chart(document.getElementById("graficaMunicipios"), {
+            type: "doughnut",
+            data: {
+                labels: mun.slice(0,5).map(m => m.nombre),
+                datasets: [{ data: mun.slice(0,5).map(() => Math.floor(Math.random()*300+50)), backgroundColor: ["#1a5276","#2e86c1","#3498db","#85c1e9","#aed6f1"] }]
+            }
+        });
+
+        // Alertas
+        const lista = document.getElementById("lista-alertas");
+        if (alertas.length === 0) {
+            lista.innerHTML = "<div class='alerta bajo'>✅ No hay alertas activas en este momento.</div>";
+        } else {
+            lista.innerHTML = alertas.map(a =>
+                `<div class='alerta ${a.nivel}'>🚨 Alerta <strong>${a.nivel.toUpperCase()}</strong> – Municipio ID: ${a.municipio_id}</div>`
+            ).join("");
+        }
+    } catch(e) {
+        console.error("Error conectando con la API:", e);
+    }
+}
+
+cargarDatos();
+</script>
+</body>
+</html>
