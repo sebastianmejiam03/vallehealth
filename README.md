@@ -1,60 +1,47 @@
-# 🏥 ValleHealth
+# ValleHealth
 
-Dashboard epidemiológico para el monitoreo de enfermedades en el **Valle del Cauca**, basado en datos reales del SIVIGILA (Instituto Nacional de Salud de Colombia).
+Aplicación web para visualizar datos epidemiológicos del Valle del Cauca, desarrollada como proyecto del curso Redes e Infraestructura 2025-03 en la Universidad Autónoma de Occidente.
 
-## 🌐 Demo en vivo
-- **Frontend:** https://magnifico-chebakia-4b62d4.netlify.app
-- **API Backend:** https://vallehealth-backend.onrender.com/docs
+## ¿Qué hace?
 
-## 📋 Descripción
-ValleHealth es una aplicación web que presenta dashboards interactivos con información epidemiológica del Valle del Cauca. Permite a ciudadanos y profesionales de salud consultar y analizar datos de enfermedades por municipio.
+Muestra un dashboard con información de enfermedades reportadas en los municipios del Valle del Cauca, usando datos reales del SIVIGILA del Instituto Nacional de Salud de Colombia.
 
-## 👥 Usuarios
-- **Ciudadano:** Consulta enfermedades y alertas en su municipio
-- **Profesional de salud / Admin:** Análisis avanzado, gestión de datos y exportación CSV
+## Links
 
-## 🛠️ Tecnologías
-| Componente | Tecnología |
-|---|---|
-| Backend | Python + FastAPI |
-| Base de datos | PostgreSQL |
-| Frontend | HTML + CSS + JavaScript + Chart.js |
-| Despliegue backend | Render.com |
-| Despliegue frontend | Netlify |
-| Dataset | SIVIGILA – INS Colombia |
+- App: https://magnifico-chebakia-4b62d4.netlify.app
+- API: https://vallehealth-backend.onrender.com/docs
 
-## 🚀 Cómo ejecutar localmente
+## Tecnologías usadas
 
-### Backend
+- Backend: Python con FastAPI
+- Base de datos: PostgreSQL
+- Frontend: HTML, CSS y JavaScript con Chart.js
+- Despliegue: Render (backend) y Netlify (frontend)
+- Dataset: SIVIGILA 2023 – INS Colombia (23.983 casos de Dengue en el Valle del Cauca)
+
+## Cómo correrlo localmente
+
+Clonar el repositorio:
+```bash
+git clone https://github.com/SebastianMejiam03/vallehealth.git
+```
+
+Instalar dependencias del backend:
 ```bash
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-### Frontend
+Abrir el frontend:
 ```bash
 open frontend/index.html
 ```
 
-## 📊 Dataset
-Los datos provienen del **SIVIGILA** (Sistema de Vigilancia en Salud Pública) del Instituto Nacional de Salud de Colombia. Contiene **23,983 casos reales** de Dengue en el Valle del Cauca para el año 2023.
-
-## 📁 Estructura del proyecto
+## Estructura
 ```
 vallehealth/
-├── backend/
-│   ├── main.py          # API REST con FastAPI
-│   ├── models.py        # Modelos de base de datos
-│   ├── database.py      # Conexión PostgreSQL
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html       # Dashboard principal
-│   ├── dashboard.html   # Vista con filtros
-│   ├── login.html       # Inicio de sesión
-│   └── admin.html       # Panel administrador
+├── backend/       # API REST con FastAPI
+├── frontend/      # Páginas HTML del dashboard
 └── README.md
 ```
-
-## 👨‍💻 Desarrollado por
-Proyecto de curso – Redes e Infraestructura 2025-03
